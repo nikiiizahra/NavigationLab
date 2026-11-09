@@ -6,10 +6,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,7 +28,16 @@ fun DetailScreen(
         val student = uiState.student
         val error = uiState.errorMessage
 
-        if (error != null) {
+        if (uiState.isLoading) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator()
+            }
+        } else if (error != null) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp)
@@ -38,7 +47,7 @@ fun DetailScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Data tidak ditemukan",
+                        text = "Gagal memuat data",
                         style = MaterialTheme.typography.titleMedium
                     )
                     Text(error)
@@ -60,8 +69,8 @@ fun DetailScreen(
                 Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
                     InfoRow(label = "ID", value = student.id.toString())
                     InfoRow(label = "Nama", value = student.name)
-                    InfoRow(label = "Program", value = student.program)
-                    InfoRow(label = "Angkatan", value = student.year.toString())
+                    InfoRow(label = "Email", value = student.email)
+                    InfoRow(label = "University", value = student.university)
                 }
             }
 
