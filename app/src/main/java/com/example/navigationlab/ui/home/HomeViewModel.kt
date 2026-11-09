@@ -19,11 +19,47 @@ class HomeViewModel(
     }
 
     fun loadStudents() {
-        val students = repository.getStudents()
-        uiState = if (students.isNotEmpty()) {
-            HomeUiState(students = students)
-        } else {
-            HomeUiState(errorMessage = "Belum ada data mahasiswa")
+        uiState = uiState.copy(isLoading = true, errorMessage = null)
+
+        repository.getStudents { result ->
+            result
+                .onSuccess { data ->
+                    uiState = uiState.copy(students = data, isLoading = false)
+                }
+                .onFailure { error ->
+                    uiState = uiState.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Gagal mengambil data"
+                    )
+                }
+        }
+    }
+
+    fun onSearchQueryChange(query: String) {
+        uiState = uiState.copy(searchQuery = query)
+    }
+
+    // Dipanggil hanya saat tombol Cari ditekan (tanpa debounce)
+    fun search() {
+        val query = uiState.searchQuery.trim()
+        if (query.isEmpty()) {
+            loadStudents() // query kosong -> muat ulang daftar awal
+            return
+        }
+
+        uiState = uiState.copy(isLoading = true, errorMessage = null)
+
+        repository.searchStudents(query) { result ->
+            result
+                .onSuccess { data ->
+                    uiState = uiState.copy(students = data, isLoading = false)
+                }
+                .onFailure { error ->
+                    uiState = uiState.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Gagal mencari data"
+                    )
+                }
         }
     }
 
@@ -31,9 +67,8 @@ class HomeViewModel(
         fun factory(repository: StudentRepository): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return HomeViewModel(repository) as T
-                }
+                override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                    HomeViewModel(repository) as T
             }
     }
 }

@@ -19,10 +19,13 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,7 +43,10 @@ fun HomeScreen(
     uiState: HomeUiState,
     onOpenDetail: (Int) -> Unit,
     onOpenProfile: () -> Unit,
-    onOpenAbout: () -> Unit
+    onOpenAbout: () -> Unit,
+    onRetry: () -> Unit,
+    onSearchQueryChange: (String) -> Unit,
+    onSearch: () -> Unit
 ) {
     Scaffold { innerPadding ->
         Column(
@@ -93,16 +99,69 @@ fun HomeScreen(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
-
-            uiState.errorMessage?.let { Text(it) }
-
-            uiState.students.forEach { student ->
-                MenuCard(
-                    icon = Icons.Default.Person,
-                    title = student.name,
-                    subtitle = "ID: ${student.id}",
-                    onClick = { onOpenDetail(student.id) }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = uiState.searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Cari mahasiswa") },
+                    singleLine = true
                 )
+                Button(onClick = onSearch) {
+                    Text("Cari")
+                }
+            }
+
+            // Tiga kondisi: loading, error, data
+            when {
+                uiState.isLoading -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+
+                uiState.errorMessage != null -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(uiState.errorMessage ?: "")
+                        Button(onClick = onRetry) {
+                            Text("Coba Lagi")
+                        }
+                    }
+                }
+
+                else -> {
+                    if (uiState.students.isEmpty()) {
+                        Text(
+                            text = "Tidak ada hasil yang ditemukan",
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        uiState.students.forEach { student ->
+                            MenuCard(
+                                icon = Icons.Default.Person,
+                                title = student.name,
+                                subtitle = "ID: ${student.id}",
+                                onClick = { onOpenDetail(student.id) }
+                            )
+                        }
+                    }
+                }
             }
 
             Text(
