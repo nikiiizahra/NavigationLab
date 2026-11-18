@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -45,6 +46,7 @@ fun HomeScreen(
     onOpenDetail: (Int) -> Unit,
     onOpenProfile: () -> Unit,
     onOpenAbout: () -> Unit,
+    onOpenFavorites: () -> Unit,
     onRetry: () -> Unit,
     onRefresh: () -> Unit,
     onSearchQueryChange: (String) -> Unit
@@ -88,7 +90,7 @@ fun HomeScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "Praktikum 06 · Arsitektur Android",
+                        text = "Praktikum 09 · Room & DataStore",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
                     )
@@ -175,6 +177,12 @@ fun HomeScreen(
                 fontWeight = FontWeight.SemiBold
             )
 
+            MenuCard(
+                icon = Icons.Default.Star,
+                title = "Mahasiswa Favorit",
+                subtitle = "Daftar mahasiswa tersimpan lokal (Room)",
+                onClick = onOpenFavorites
+            )
             MenuCard(
                 icon = Icons.Default.AccountCircle,
                 title = "Buka Profile",

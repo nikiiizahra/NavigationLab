@@ -21,6 +21,7 @@ import com.example.navigationlab.ui.detail.DetailUiState
 @Composable
 fun DetailScreen(
     uiState: DetailUiState,
+    onToggleFavorite: () -> Unit,
     onOpenProfile: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -72,6 +73,16 @@ fun DetailScreen(
                     InfoRow(label = "Email", value = student.email)
                     InfoRow(label = "University", value = student.university)
                 }
+            }
+
+            Button(
+                onClick = onToggleFavorite,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    if (uiState.isFavorite) "Hapus dari Favorit"
+                    else "Simpan ke Favorit"
+                )
             }
 
             Button(
