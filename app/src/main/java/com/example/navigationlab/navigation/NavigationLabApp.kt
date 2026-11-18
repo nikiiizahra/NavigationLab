@@ -2,7 +2,9 @@ package com.example.navigationlab.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -36,17 +38,22 @@ fun NavigationLabApp() {
         startDestination = Routes.HOME
     ) {
         composable(Routes.HOME) {
+
             val homeViewModel: HomeViewModel = viewModel(
                 factory = HomeViewModel.factory(repository)
             )
+            val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
+            val searchQuery by homeViewModel.searchQuery.collectAsStateWithLifecycle()
+
             HomeScreen(
-                uiState = homeViewModel.uiState,
+                uiState = homeUiState,
+                searchQuery = searchQuery,
                 onOpenDetail = { id -> navController.navigate(Routes.detail(id)) },
                 onOpenProfile = { navController.navigate(Routes.PROFILE) },
                 onOpenAbout = { navController.navigate(Routes.ABOUT) },
-                onRetry = homeViewModel::search,
-                onSearchQueryChange = homeViewModel::onSearchQueryChange,
-                onSearch = homeViewModel::search
+                onRetry = homeViewModel::loadStudents,
+                onRefresh = homeViewModel::refresh,
+                onSearchQueryChange = homeViewModel::onSearchQueryChange
             )
         }
 
@@ -61,13 +68,14 @@ fun NavigationLabApp() {
             val viewModel: DetailViewModel = viewModel(
                 factory = DetailViewModel.factory(repository)
             )
+            val detailUiState by viewModel.uiState.collectAsStateWithLifecycle()
 
             LaunchedEffect(studentId) {
                 viewModel.loadStudent(studentId)
             }
 
             DetailScreen(
-                uiState = viewModel.uiState,
+                uiState = detailUiState,
                 onOpenProfile = { navController.navigate(Routes.PROFILE) },
                 onBack = { navController.popBackStack() }
             )

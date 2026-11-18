@@ -41,12 +41,13 @@ import com.example.navigationlab.ui.home.HomeUiState
 @Composable
 fun HomeScreen(
     uiState: HomeUiState,
+    searchQuery: String,
     onOpenDetail: (Int) -> Unit,
     onOpenProfile: () -> Unit,
     onOpenAbout: () -> Unit,
     onRetry: () -> Unit,
-    onSearchQueryChange: (String) -> Unit,
-    onSearch: () -> Unit
+    onRefresh: () -> Unit,
+    onSearchQueryChange: (String) -> Unit
 ) {
     Scaffold { innerPadding ->
         Column(
@@ -94,27 +95,31 @@ fun HomeScreen(
                 }
             }
 
-            Text(
-                text = "Daftar Mahasiswa",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(
-                    value = uiState.searchQuery,
-                    onValueChange = onSearchQueryChange,
-                    modifier = Modifier.weight(1f),
-                    label = { Text("Cari mahasiswa") },
-                    singleLine = true
+                Text(
+                    text = "Daftar Mahasiswa",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
                 )
-                Button(onClick = onSearch) {
-                    Text("Cari")
+                Button(
+                    onClick = onRefresh,
+                    enabled = !uiState.isLoading
+                ) {
+                    Text("Refresh")
                 }
             }
+
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Cari mahasiswa") },
+                singleLine = true
+            )
 
             // Tiga kondisi: loading, error, data
             when {

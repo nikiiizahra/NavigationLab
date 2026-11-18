@@ -1,65 +1,78 @@
 package com.example.navigationlab.ui.home
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.example.navigationlab.data.repository.StudentRepository
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 
 class HomeViewModel(
     private val repository: StudentRepository
 ) : ViewModel() {
 
-    var uiState by mutableStateOf(HomeUiState())
-        private set
+    private val _uiState = MutableStateFlow(HomeUiState(isLoading = true))
+    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     init {
-        loadStudents()
-    }
-
-    fun loadStudents() {
-        uiState = uiState.copy(isLoading = true, errorMessage = null)
-
-        repository.getStudents { result ->
-            result
-                .onSuccess { data ->
-                    uiState = uiState.copy(students = data, isLoading = false)
-                }
-                .onFailure { error ->
-                    uiState = uiState.copy(
-                        isLoading = false,
-                        errorMessage = error.message ?: "Gagal mengambil data"
-                    )
-                }
-        }
+        observeSearch()
     }
 
     fun onSearchQueryChange(query: String) {
-        uiState = uiState.copy(searchQuery = query)
+        _searchQuery.value = query
     }
 
-    // Dipanggil hanya saat tombol Cari ditekan (tanpa debounce)
-    fun search() {
-        val query = uiState.searchQuery.trim()
-        if (query.isEmpty()) {
-            loadStudents() // query kosong -> muat ulang daftar awal
-            return
+    @OptIn(FlowPreview::class)
+    private fun observeSearch() {
+        viewModelScope.launch {
+            searchQuery
+                .debounce(500)
+                .distinctUntilChanged()
+                .collectLatest { query ->
+                    fetchStudents(query, fallbackError = "Pencarian gagal")
+                }
         }
+    }
 
-        uiState = uiState.copy(isLoading = true, errorMessage = null)
+    fun loadStudents() {
+        val query = searchQuery.value
+        viewModelScope.launch {
+            fetchStudents(query, fallbackError = "Request gagal")
+        }
+    }
 
-        repository.searchStudents(query) { result ->
-            result
-                .onSuccess { data ->
-                    uiState = uiState.copy(students = data, isLoading = false)
-                }
-                .onFailure { error ->
-                    uiState = uiState.copy(
-                        isLoading = false,
-                        errorMessage = error.message ?: "Gagal mencari data"
-                    )
-                }
+    fun refresh() {
+        val query = searchQuery.value
+        viewModelScope.launch {
+            fetchStudents(query, fallbackError = "Refresh gagal")
+        }
+    }
+
+    private suspend fun fetchStudents(query: String, fallbackError: String) {
+        _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+        try {
+            val data = if (query.isBlank()) {
+                repository.getStudents()
+            } else {
+                repository.searchStudents(query)
+            }
+            _uiState.value = HomeUiState(students = data)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            _uiState.value = HomeUiState(
+                errorMessage = e.localizedMessage ?: fallbackError
+            )
         }
     }
 
@@ -67,8 +80,9 @@ class HomeViewModel(
         fun factory(repository: StudentRepository): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                    HomeViewModel(repository) as T
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return HomeViewModel(repository) as T
+                }
             }
     }
 }
